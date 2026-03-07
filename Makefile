@@ -1,2 +1,2 @@
-supereditorbyme: supereditorbyme.c
-	$(CC) supereditorbyme.c -o supereditorbyme -Wall -Wextra -pedantic -std=c99
+holyeditor: holyeditor.c
+	$(CC) holyeditor.c -o holyeditor -Wall -Wextra -pedantic -std=c99
