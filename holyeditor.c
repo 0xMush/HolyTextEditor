@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/ioctl.h>
-
+#include <string.h>
 
 /*** defines ***/
 #define CTRL_KEY(k) ((k) & 0x1f)
@@ -75,9 +75,9 @@ int getCursorPosition(int *rows, int *cols) {
     i++;
   }
   buf[i] = '\0';
-  printf("\r\n&buf[1]: '%s'\r\n", &buf[1]);
-  editorReadKey();
-  return -1;
+  if (buf[0] != '\x1b' || buf[1] != '[') return -1;
+  if (sscanf(&buf[2], "%d;%d", rows, cols) != 2) return -1;
+  return 0;
 }
 
 int getWindowSize(int *rows, int *cols){
@@ -95,12 +95,39 @@ int getWindowSize(int *rows, int *cols){
     
 }
 
+/*** append buffer ***/
+
+struct abuf
+{
+    /* data */
+    char *b;
+    int len;
+};
+#define ABUF_INIT {NULL, 0}
+
+void abAppend(struct abuf *ab, const char *s, int len){
+    char *new = realloc(ab->b, ab->len + len);
+
+    if (new == NULL) return;
+    memcpy(&new[ab->len], s, len);
+    ab->b = new;
+    ab->len += len;
+}
+
+void abFree(struct abuf *ab){
+    free(ab->b);
+}
+
 /*** output ***/
 
 void editorDrawRows(){
     int y;
     for(y = 0; y < E.screenrow; y++){
-        write(STDOUT_FILENO, "~\r\n", 3);
+        write(STDOUT_FILENO, "~", 1);
+
+        if (y < E.screenrow - 1) {
+            write(STDOUT_FILENO, "\r\n", 2);
+        }
     }
 }
 void editorRefreshScreen(){
